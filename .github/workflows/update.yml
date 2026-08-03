@@ -1,0 +1,63 @@
+name: Auto Update TorrServer Package
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # Проверка каждый день в 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix (Determinate Systems)
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Check for new release and update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          UPSTREAM_REPO="YouROK/TorrServer"
+
+          echo "Получаем последний релиз из $UPSTREAM_REPO..."
+          LATEST_TAG=$(gh release view --repo $UPSTREAM_REPO --json tagName --template '{{.tagName}}')
+
+          # Отрезаем MatriX.v или v, получаем 141.124
+          LATEST_VERSION=$(echo "$LATEST_TAG" | sed -E 's/.*v//')
+          CURRENT_VERSION=$(grep -oP 'version = "\K[^"]+' package.nix)
+
+          if [ "$LATEST_VERSION" = "$CURRENT_VERSION" ]; then
+            echo "Текущая версия $CURRENT_VERSION актуальна."
+            exit 0
+          fi
+
+          echo "Найдена новая версия: $LATEST_VERSION (было: $CURRENT_VERSION)"
+
+          URL_X86_STD="https://github.com/$UPSTREAM_REPO/releases/download/$LATEST_TAG/TorrServer-linux-amd64"
+          URL_X86_GST="https://github.com/$UPSTREAM_REPO/releases/download/$LATEST_TAG/TorrServer-gst-linux-amd64"
+          URL_ARM_STD="https://github.com/$UPSTREAM_REPO/releases/download/$LATEST_TAG/TorrServer-linux-arm64"
+          URL_ARM_GST="https://github.com/$UPSTREAM_REPO/releases/download/$LATEST_TAG/TorrServer-gst-linux-arm64"
+
+          echo "Вычисляем хеши..."
+          HASH_X86_STD=$(nix-prefetch-url "$URL_X86_STD")
+          HASH_X86_GST=$(nix-prefetch-url "$URL_X86_GST")
+          HASH_ARM_STD=$(nix-prefetch-url "$URL_ARM_STD")
+          HASH_ARM_GST=$(nix-prefetch-url "$URL_ARM_GST")
+
+          echo "Обновляем package.nix..."
+          sed -i "s|version = \".*\";|version = \"$LATEST_VERSION\";|" package.nix
+          sed -i "s|hash = \".*\"; # UPDATE_HASH_X86_STD|hash = \"$HASH_X86_STD\"; # UPDATE_HASH_X86_STD|" package.nix
+          sed -i "s|hash = \".*\"; # UPDATE_HASH_X86_GST|hash = \"$HASH_X86_GST\"; # UPDATE_HASH_X86_GST|" package.nix
+          sed -i "s|hash = \".*\"; # UPDATE_HASH_ARM_STD|hash = \"$HASH_ARM_STD\"; # UPDATE_HASH_ARM_STD|" package.nix
+          sed -i "s|hash = \".*\"; # UPDATE_HASH_ARM_GST|hash = \"$HASH_ARM_GST\"; # UPDATE_HASH_ARM_GST|" package.nix
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41851857+github-actions[bot]@users.noreply.github.com"
+          git add package.nix
+          git commit -m "chore: автоматическое обновление TorrServer до $LATEST_VERSION"
+          git push
