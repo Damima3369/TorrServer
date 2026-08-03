@@ -5,16 +5,9 @@
   makeWrapper,
   autoPatchelfHook,
   withGst ? true,
-  # Зависимости GStreamer (нужны только при сборке с GST)
-  glib ? null,
-  ffmpeg ? null,
-  gstreamer ? null,
-  gst-plugins-base ? null,
-  gst-plugins-good ? null,
-  gst-plugins-bad ? null,
-  gst-plugins-ugly ? null,
-  gst-libav ? null,
-  ocl-icd ? null,
+  glib,
+  gst_all_1,
+  ffmpeg,
 }:
 
 let
@@ -50,27 +43,16 @@ let
     (sources.${system} or (throw "Неподдерживаемая архитектура: ${system}"))
     .${if withGst then "gst" else "standard"};
 
-  gstLibs =
+  gstPackages =
     if withGst then
       [
         glib
-        gstreamer
-        gst-plugins-base
-        gst-plugins-good
-        gst-plugins-bad
-        gst-plugins-ugly
-        gst-libav
-        ocl-icd
-      ]
-    else
-      [ ];
-
-  binTools =
-    if withGst then
-      lib.filter (x: x != null) [
-        gstreamer
-        gst-plugins-base
-        ffmpeg
+        gst_all_1.gstreamer
+        gst_all_1.gst-plugins-base
+        gst_all_1.gst-plugins-good
+        gst_all_1.gst-plugins-bad
+        gst_all_1.gst-plugins-ugly
+        gst_all_1.gst-libav
       ]
     else
       [ ];
@@ -88,7 +70,7 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ autoPatchelfHook ] ++ lib.optionals withGst [ makeWrapper ];
 
-  buildInputs = [ stdenv.cc.cc.lib ] ++ gstLibs;
+  buildInputs = [ stdenv.cc.cc.lib ] ++ gstPackages;
 
   installPhase = ''
     runHook preInstall
@@ -101,11 +83,19 @@ stdenv.mkDerivation {
   '';
 
   postInstall = lib.optionalString withGst ''
+    mkdir -p $out/libexec
+    ln -s ${gst_all_1.gst-plugins-base}/bin/gst-discoverer-1.0 $out/libexec/gst-discoverer
+
     wrapProgram $out/bin/TorrServer \
-      --prefix PATH : "${lib.makeBinPath binTools}" \
-      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath gstLibs}" \
+      --prefix PATH : "${
+        lib.makeBinPath [
+          gst_all_1.gst-plugins-base
+          ffmpeg
+        ]
+      }:$out/libexec" \
+      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath gstPackages}" \
       --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${
-        lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstLibs
+        lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstPackages
       }"
   '';
 
