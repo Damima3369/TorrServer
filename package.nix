@@ -6,6 +6,8 @@
   autoPatchelfHook,
   withGst ? true,
   # Зависимости GStreamer (нужны только при сборке с GST)
+  glib ? null,
+  ffmpeg ? null,
   gstreamer ? null,
   gst-plugins-base ? null,
   gst-plugins-good ? null,
@@ -51,6 +53,7 @@ let
   gstLibs =
     if withGst then
       [
+        glib
         gstreamer
         gst-plugins-base
         gst-plugins-good
@@ -58,6 +61,16 @@ let
         gst-plugins-ugly
         gst-libav
         ocl-icd
+      ]
+    else
+      [ ];
+
+  binTools =
+    if withGst then
+      lib.filter (x: x != null) [
+        gstreamer
+        gst-plugins-base
+        ffmpeg
       ]
     else
       [ ];
@@ -84,18 +97,16 @@ stdenv.mkDerivation {
     cp $src $out/bin/TorrServer
     chmod +x $out/bin/TorrServer
 
-    ${lib.optionalString withGst ''
-      wrapProgram $out/bin/TorrServer \
-        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath gstLibs}" \
-        --prefix PATH : "${
-          lib.makeBinPath [
-            gstreamer
-            gst-plugins-base
-          ]
-        }"
-    ''}
-
     runHook postInstall
+  '';
+
+  postInstall = lib.optionalString withGst ''
+    wrapProgram $out/bin/TorrServer \
+      --prefix PATH : "${lib.makeBinPath binTools}" \
+      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath gstLibs}" \
+      --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${
+        lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" gstLibs
+      }"
   '';
 
   meta = with lib; {
