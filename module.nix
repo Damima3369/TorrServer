@@ -80,7 +80,16 @@ in
   };
 
   config = mkIf cfg.enable {
-    networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.port ];
+    networking.firewall = mkIf cfg.openFirewall {
+      allowedTCPPorts = [
+        cfg.port
+        9080
+      ];
+      allowedUDPPorts = [
+        1900
+        9080
+      ];
+    };
 
     users.users.torrserver = {
       isSystemUser = true;
