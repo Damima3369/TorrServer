@@ -55,11 +55,37 @@ outputs = { self, nixpkgs, torrserver, ... }@inputs: {
 
 ```Nix
 services.torrserver = {
+  # Включить службу TorrServer
   enable = true;
-  enableGst = true; # true = версия с GStreamer (по умолчанию), false = стандартная
+
+  # Включить сборку с поддержкой GStreamer (для HLS-стриминга и транскодинга)
+  # Установите в false, если вам нужен только чистый Direct Play (гораздо легче)
+  enableGst = false;
+
+  # Порт веб-интерфейса и HTTP API (--port)
   port = 8090;
+
+  # IP-адрес привязки (--ip). Оставьте пустым (""), чтобы слушать все интерфейсы (0.0.0.0)
+  bindAddress = "";
+
+  # Путь к рабочей директории и базе данных (--path)
+  dataDir = "/var/lib/torrserver";
+
+  # Запуск базы данных в режиме «только для чтения» (--rdb)
+  readOnlyDb = false;
+
+  # Включить авторизацию по паролю на все HTTP-запросы (--httpauth)
+  httpAuth = false;
+
+  # Автоматически открыть в файерволе порты сервера и DLNA (8090, 9080, 1900 UDP и т.д.)
   openFirewall = true;
-  # extraFlags = [ "--webdav" ];
+
+  # Дополнительные флаги запуска
+  extraFlags = [
+    # "--webdav"
+    # "--ssl"
+    # "--maxsize" "10737418240"
+  ];
 };
 ```
 
@@ -174,11 +200,37 @@ outputs = { self, nixpkgs, torrserver, ... }@inputs: {
 
 ```Nix
 services.torrserver = {
+  # Enable the TorrServer systemd service
   enable = true;
-  enableGst = true; # true = GStreamer build (default), false = lightweight build
+
+  # Enable GStreamer support build variant (for HLS streaming & transcoding)
+  # Set to false for a lightweight Direct Play only build
+  enableGst = false;
+
+  # HTTP Web UI and API port (--port)
   port = 8090;
+
+  # IP address to bind to (--ip). Leave empty ("") to listen on all interfaces (0.0.0.0)
+  bindAddress = "";
+
+  # Path to database and state directory (--path)
+  dataDir = "/var/lib/torrserver";
+
+  # Open database in read-only mode (--rdb)
+  readOnlyDb = false;
+
+  # Require HTTP authorization for all incoming requests (--httpauth)
+  httpAuth = false;
+
+  # Automatically open required firewall ports (Web UI, DLNA DMS, SSDP)
   openFirewall = true;
-  # extraFlags = [ "--webdav" ];
+
+  # Extra command-line flags passed to TorrServer
+  extraFlags = [
+    # "--webdav"
+    # "--ssl"
+    # "--maxsize" "10737418240"
+  ];
 };
 ```
 
