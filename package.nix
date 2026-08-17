@@ -12,7 +12,7 @@
 
 let
   pname = "torrserver" + (if withGst then "-gst" else "");
-  version = "MatriX.142.2";
+  version = "MatriX.142.3";
 
   system = stdenv.hostPlatform.system;
 
@@ -20,21 +20,21 @@ let
     x86_64-linux = {
       standard = {
         url = "https://github.com/YouROK/TorrServer/releases/download/${version}/TorrServer-linux-amd64";
-        hash = "1k24nzfhg98x3vrj2hxz0my9748l68lc08kx6r9d1dniv89bnzmz"; # UPDATE_HASH_X86_STD
+        hash = "1qkmr950lali28bm5jjv32mdi4b9skjbydd9cj4288h9wvkk8r2m"; # UPDATE_HASH_X86_STD
       };
       gst = {
         url = "https://github.com/YouROK/TorrServer/releases/download/${version}/TorrServer-gst-linux-amd64";
-        hash = "0ipkqnfli48yn7j1bz5b4fnp0gsm8i3rg194y7c70bq5n4rn3c75"; # UPDATE_HASH_X86_GST
+        hash = "1kgaciclyxw67jj3j36aqcl9nzn692hp4y182xhv1hc4bjbv75i0"; # UPDATE_HASH_X86_GST
       };
     };
     aarch64-linux = {
       standard = {
         url = "https://github.com/YouROK/TorrServer/releases/download/${version}/TorrServer-linux-arm64";
-        hash = "1m6qykq6g24mg9hlydbqqs11g2xsd9jw6h9mx5x57ia8nhk7az5z"; # UPDATE_HASH_ARM_STD
+        hash = "01snq6csfza2r6zx29b1pvq83x4vwjhpq7i2lch8hbibjg1dd13j"; # UPDATE_HASH_ARM_STD
       };
       gst = {
         url = "https://github.com/YouROK/TorrServer/releases/download/${version}/TorrServer-gst-linux-arm64";
-        hash = "1zkvjl2592bfxwgnhr57kx8k911abws75sch7s26mav4hrhyvv4x"; # UPDATE_HASH_ARM_GST
+        hash = "1gqrxj90ivfjby15q8ach8amvqaa6bsisl2h9cz9b8rgwsh9v1g2"; # UPDATE_HASH_ARM_GST
       };
     };
   };
